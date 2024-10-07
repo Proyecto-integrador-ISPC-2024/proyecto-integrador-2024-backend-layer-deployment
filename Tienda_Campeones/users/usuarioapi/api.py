@@ -19,10 +19,10 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.request.method == 'POST':
             permission_classes = [permissions.AllowAny]
-        elif self.request.method in ['PUT', 'PATCH']:
+        elif self.request.method in ['PUT', 'PATCH', 'DELETE']:
             permission_classes = [permissions.IsAuthenticated]
         else:
-            permission_classes = [permissions.IsAuthenticated]
+            permission_classes = [permissions.IsAdminUser]
         return [permission() for permission in permission_classes]
     
     def create(self, request, *args, **kwargs):
