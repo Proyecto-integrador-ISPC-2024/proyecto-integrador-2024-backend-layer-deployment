@@ -35,6 +35,9 @@ class UsuarioViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)  
         instance = self.get_object()  
+        if instance.id_usuario != request.user.id_usuario:
+            return Response({'detail': 'No tienes permiso para modificar este usuario.'}, status=status.HTTP_403_FORBIDDEN)
+
         password_data = request.data.get('password_serializer', None)
         if password_data:
             password_serializer = PasswordSerializer(data=password_data)
@@ -46,6 +49,14 @@ class UsuarioViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        if instance.id_usuario != request.user.id_usuario:
+            return Response({'detail': 'No tienes permiso para inactivar este usuario.'}, status=status.HTTP_403_FORBIDDEN)
+        instance.is_active = False
+        instance.save()
+        return Response({'detail': 'Usuario inactivado exitosamente.'}, status=status.HTTP_204_NO_CONTENT)
     
 class AdminViewSet(viewsets.ModelViewSet):
     serializer_class = adminSerializer
