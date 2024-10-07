@@ -10,21 +10,42 @@ from users.models import *
 
 class UsuarioViewSet(viewsets.ModelViewSet):
     serializer_class = UsuarioSerializer
-    permission_classes = [permissions.AllowAny]
-    
-    
+   
     def get_queryset(self, pk=None):
         if pk is None:
             return self.get_serializer().Meta.model.objects.filter(is_active=True)
         return self.get_serializer().Meta.model.objects.filter(id_usuario=pk, is_active=True).first()
+    
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            permission_classes = [permissions.AllowAny]
+        elif self.request.method in ['PUT', 'PATCH']:
+            permission_classes = [permissions.IsAuthenticated]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED);
     
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)  
+        instance = self.get_object()  
+        password_data = request.data.get('password_serializer', None)
+        if password_data:
+            password_serializer = PasswordSerializer(data=password_data)
+            password_serializer.is_valid(raise_exception=True)
+            instance.set_password(password_serializer.validated_data['password'])
+            instance.save()  
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 class AdminViewSet(viewsets.ModelViewSet):
     serializer_class = adminSerializer
